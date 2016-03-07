@@ -12,17 +12,22 @@ $cli = new Goutte\Client();
 foreach ($blogConfig as $db => $item) {
     $crawler = $cli->request('GET', $item['url']);
 
-    $urls = $crawler->filter('table.kiji_head');
+    $urls = $crawler->filter('p.ttl a')->extract(array('_text', 'href'));
 
     $fileName = __DIR__ . '/../data/' . $db . '.db';
-    $newData = $urls->text();
+    // 一番上のブログを取得
+    // [0]->タイトル
+    // [1]->url
+    $title = $urls[0][0];
+    $blog_url = $urls[0][1];
+    $newData = $title;
 
     $oldData = file_get_contents($fileName);
 
     if ($newData !== $oldData) {
-        $text = $item['text'];
-        $text .= $newData . PHP_EOL;
-        $text .= $item['url'];
+        $text = $item['text'] . PHP_EOL . PHP_EOL;
+        $text .= $title . PHP_EOL . PHP_EOL;
+        $text .= 'http://www.keyakizaka46.com' . $blog_url;
         $text = urlencode($text);
         $url = "https://slack.com/api/chat.postMessage?token=" . SLACK_API_KEY . "&channel=%23" . $db . "_blog&text=" . $text;
         file_get_contents($url);
